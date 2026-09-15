@@ -172,6 +172,19 @@ class EmpleadoDetailView(LoginRequiredMixin, DetailView):
         ctx["permisos"] = self.object.permisos.all()[:5]
         ctx["dotaciones"] = self.object.dotaciones.all()[:5]
         ctx["subordinados"] = self.object.subordinados.filter(estado="ACTIVO")
+
+        # Elegibilidad para dotación según la ley colombiana (< 2 SMMLV)
+        from .models import SalarioMinimo
+        hoy = date.today()
+        smmlv = SalarioMinimo.vigente_para(hoy.year)
+        ctx["smmlv"] = smmlv
+        if smmlv:
+            ctx["limite_dotacion"] = smmlv.valor * 2
+            contrato = self.object.contratos.filter(estado="VIGENTE").order_by(
+                "-fecha_inicio"
+            ).first()
+            salario = contrato.salario if contrato else self.object.salario_base
+            ctx["elegible_dotacion"] = salario < ctx["limite_dotacion"]
         return ctx
 
 

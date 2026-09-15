@@ -79,12 +79,31 @@
                     <div class="card-header bg-white fw-semibold">Últimas dotaciones</div>
                     <ul class="list-group list-group-flush">
                         {% for d in dotaciones %}
-                        <li class="list-group-item small">{{ d.get_tipo_display }}: {{ d.descripcion }}<br><span class="text-muted">{{ d.fecha_entrega|date:"d/m/Y" }}</span></li>
+                        <li class="list-group-item small">{{ d.get_item_display }}: {{ d.descripcion }}<br><span class="text-muted">{{ d.fecha_entrega|date:"d/m/Y" }}</span></li>
                         {% empty %}<li class="list-group-item text-muted small">Sin dotaciones.</li>{% endfor %}
                     </ul>
                 </div>
             </div>
         </div>
+
+        {% if smmlv %}
+        <div class="row g-3 mt-0">
+            <div class="col-12">
+                <div class="card card-stat">
+                    <div class="card-header bg-white fw-semibold">Derecho a dotación (ley colombiana)</div>
+                    <div class="card-body small">
+                        SMMLV {{ smmlv.anio }}: <strong>${{ smmlv.valor|floatformat:2|intcomma }}</strong> ·
+                        Tope legal (2 SMMLV): <strong>${{ limite_dotacion|floatformat:2|intcomma }}</strong>
+                        {% if elegible_dotacion %}
+                            <span class="badge bg-success ms-2">Tiene derecho a dotación</span>
+                        {% else %}
+                            <span class="badge bg-danger ms-2">Sin derecho a dotación (devenga ≥ 2 SMMLV)</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         {% if subordinados %}
         <div class="card card-stat mt-3">

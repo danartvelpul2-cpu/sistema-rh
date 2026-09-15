@@ -4,21 +4,28 @@
 {% block encabezado %}Dotaciones{% endblock %}
 
 {% block contenido %}
+<div class="alert alert-light border small">
+    <i class="bi bi-info-circle me-1"></i>
+    Según la ley colombiana la dotación es obligatoria solo para trabajadores que
+    devenguen <strong>menos de 2 SMMLV</strong>, con entregas a más tardar el
+    <strong>30 de abril</strong>, <strong>31 de agosto</strong> y <strong>20 de diciembre</strong>
+    de cada año.
+</div>
 <div class="card card-stat">
     <div class="card-header bg-white d-flex justify-content-end">
         <a href="{% url 'dotacion-crear' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nueva entrega</a>
     </div>
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
-            <thead><tr><th>Empleado</th><th>Tipo</th><th>Descripción</th><th>Entrega</th><th>Próximo cambio</th><th>Estado</th><th></th></tr></thead>
+            <thead><tr><th>Empleado</th><th>Item</th><th>Descripción</th><th>Entrega</th><th>Periodo (límite legal)</th><th>Estado</th><th></th></tr></thead>
             <tbody>
                 {% for d in dotaciones %}
                 <tr>
                     <td><a href="{% url 'empleado-detalle' d.empleado_id %}" class="fw-semibold">{{ d.empleado.nombre_completo }}</a></td>
-                    <td>{{ d.get_tipo_display }}</td>
-                    <td>{{ d.descripcion }}</td>
+                    <td>{{ d.get_item_display }}</td>
+                    <td>{{ d.descripcion|default:"—" }}</td>
                     <td class="small">{{ d.fecha_entrega|date:"d/m/Y" }}</td>
-                    <td class="small">{{ d.proximo_cambio|date:"d/m/Y" }}</td>
+                    <td class="small">{{ d.periodo }}<br><span class="text-muted">máx. {{ d.fecha_limite_periodo|date:"d/m/Y" }}</span></td>
                     <td>
                         {% if d.estado == 'ENTREGADA' %}<span class="badge bg-success">Entregada</span>
                         {% elif d.estado == 'PENDIENTE' %}<span class="badge bg-warning text-dark">Pendiente</span>

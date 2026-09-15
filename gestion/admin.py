@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from .models import (
     Area, Cargo, Empleado, Contrato, NominaPeriodo, NovedadNomina,
-    Permiso, Dotacion, Vacante, Candidato,
+    Permiso, Dotacion, SalarioMinimo, Vacante, Candidato,
 )
 
 
@@ -50,10 +50,15 @@ class PermisoAdmin(admin.ModelAdmin):
     list_filter = ("tipo", "estado")
 
 
+@admin.register(SalarioMinimo)
+class SalarioMinimoAdmin(admin.ModelAdmin):
+    list_display = ("anio", "valor")
+
+
 @admin.register(Dotacion)
 class DotacionAdmin(admin.ModelAdmin):
-    list_display = ("empleado", "tipo", "descripcion", "fecha_entrega", "estado")
-    list_filter = ("tipo", "estado")
+    list_display = ("empleado", "item", "descripcion", "fecha_entrega", "estado")
+    list_filter = ("item", "estado")
 
 
 @admin.register(Vacante)

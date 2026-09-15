@@ -113,8 +113,7 @@ class DotacionForm(FormEstilo, forms.ModelForm):
     class Meta:
         model = Dotacion
         fields = [
-            "empleado", "tipo", "descripcion", "fecha_entrega",
-            "fecha_cambio", "estado",
+            "empleado", "item", "descripcion", "fecha_entrega", "estado",
         ]
 
     def clean_fecha_entrega(self):

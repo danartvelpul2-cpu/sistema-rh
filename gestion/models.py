@@ -2,7 +2,6 @@
 Modelos del sistema de gestión de Recursos Humanos.
 """
 from datetime import date
-from dateutil.relativedelta import relativedelta
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -282,13 +281,43 @@ class Permiso(models.Model):
         return (self.fecha_fin - self.fecha_inicio).days + 1
 
 
-class Dotacion(models.Model):
-    """Entregas de dotación: uniformes, EPP, herramientas."""
+class SalarioMinimo(models.Model):
+    """Salario mínimo legal mensual (SMMLV) por año vigente en Colombia.
 
-    class Tipo(models.TextChoices):
-        UNIFORME = "UNIFORME", "Uniforme"
-        EPP = "EPP", "Elemento de protección (EPP)"
-        HERRAMIENTA = "HERRAMIENTA", "Herramienta"
+    Se usa para validar el derecho a dotación (trabajadores que devengan
+    menos de 2 SMMLV) y otros auxilios. Actualizar cada año según decreto.
+    """
+
+    anio = models.PositiveIntegerField(unique=True, verbose_name="Año")
+    valor = models.DecimalField(max_digits=12, decimal_places=2)
+
+    class Meta:
+        ordering = ["-anio"]
+        verbose_name = "Salario mínimo (SMMLV)"
+        verbose_name_plural = "Salarios mínimos (SMMLV)"
+
+    def __str__(self):
+        return f"SMMLV {self.anio}: ${self.valor:,.0f}"
+
+    @classmethod
+    def vigente_para(cls, anio):
+        """SMMLV aplicable a un año: el más reciente definido hasta ese año."""
+        return cls.objects.filter(anio__lte=anio).order_by("-anio").first()
+
+
+class Dotacion(models.Model):
+    """
+    Entregas de dotación según la ley colombiana:
+    - Derecho solo para trabajadores que devenguen MENOS de 2 SMMLV.
+    - Entregas a más tardar el 30 de abril, 31 de agosto y 20 de diciembre.
+    - Items: camisa, camiseta, jean y botas.
+    """
+
+    class Item(models.TextChoices):
+        CAMISA = "CAMISA", "Camisa"
+        CAMISETA = "CAMISETA", "Camiseta"
+        JEAN = "JEAN", "Jean / Pantalón"
+        BOTAS = "BOTAS", "Botas"
         OTRO = "OTRO", "Otro"
 
     class Estado(models.TextChoices):
@@ -296,13 +325,18 @@ class Dotacion(models.Model):
         PENDIENTE = "PENDIENTE", "Pendiente"
         DEVUELTA = "DEVUELTA", "Devuelta"
 
+    # (mes, día) de las fechas límite legales de entrega por periodo
+    FECHAS_LIMITE = ((4, 30), (8, 31), (12, 20))
+    NOMBRES_PERIODO = {4: "Primera entrega (abril)", 8: "Segunda entrega (agosto)",
+                       12: "Tercera entrega (diciembre)"}
+
     empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE, related_name="dotaciones")
-    tipo = models.CharField(max_length=15, choices=Tipo.choices)
-    descripcion = models.CharField(max_length=200)
-    fecha_entrega = models.DateField(default=date.today, blank=True)
-    fecha_cambio = models.DateField(
-        null=True, blank=True, help_text="Fecha programada para reposición/cambio."
+    item = models.CharField(max_length=15, choices=Item.choices, default=Item.CAMISA)
+    descripcion = models.CharField(
+        max_length=200, blank=True,
+        help_text="Talla, color u otras especificaciones.",
     )
+    fecha_entrega = models.DateField(default=date.today, blank=True)
     estado = models.CharField(max_length=12, choices=Estado.choices, default=Estado.ENTREGADA)
 
     class Meta:
@@ -310,12 +344,57 @@ class Dotacion(models.Model):
         verbose_name_plural = "Dotaciones"
 
     def __str__(self):
-        return f"{self.get_tipo_display()}: {self.descripcion} — {self.empleado}"
+        return f"{self.get_item_display()} — {self.empleado}"
 
     @property
-    def proximo_cambio(self):
-        """Próxima fecha de reposición sugerida (anual por defecto)."""
-        return self.fecha_cambio or (self.fecha_entrega + relativedelta(years=1))
+    def fecha_limite_periodo(self):
+        """Fecha límite legal del periodo al que pertenece la entrega."""
+        anio = self.fecha_entrega.year
+        for mes, dia in self.FECHAS_LIMITE:
+            if self.fecha_entrega.month <= mes:
+                return date(anio, mes, dia)
+        return date(anio, 12, 20)
+
+    @property
+    def periodo(self):
+        return self.NOMBRES_PERIODO.get(self.fecha_limite_periodo.month, "")
+
+    @property
+    def limite_elegibilidad(self):
+        """Tope salarial para derecho a dotación: 2 SMMLV del año de entrega."""
+        smmlv = SalarioMinimo.vigente_para(self.fecha_entrega.year)
+        return (smmlv.valor * 2) if smmlv else None
+
+    @property
+    def empleado_es_elegible(self):
+        """True si el trabajador devenga menos de 2 SMMLV (ley colombiana)."""
+        limite = self.limite_elegibilidad
+        if limite is None:
+            return True  # sin SMMLV configurado no se puede validar
+        contrato = (
+            self.empleado.contratos.filter(estado=Contrato.Estado.VIGENTE)
+            .order_by("-fecha_inicio").first()
+        )
+        salario = contrato.salario if contrato else self.empleado.salario_base
+        return salario < limite
+
+    def clean(self):
+        limite_periodo = self.fecha_limite_periodo
+        if self.fecha_entrega and self.fecha_entrega > limite_periodo:
+            raise ValidationError({
+                "fecha_entrega": (
+                    f"La {self.periodo.lower()} debe entregarse a más tardar el "
+                    f"{limite_periodo.strftime('%d/%m/%Y')} según la ley colombiana."
+                )
+            })
+        if self.empleado_id and not self.empleado_es_elegible:
+            raise ValidationError({
+                "empleado": (
+                    f"{self.empleado.nombre_completo} devenga igual o más de 2 SMMLV "
+                    f"(tope: ${self.limite_elegibilidad:,.0f}) y por ley no tiene "
+                    "derecho a dotación."
+                )
+            })
 
 
 class Vacante(models.Model):

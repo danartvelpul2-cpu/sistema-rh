@@ -12,7 +12,7 @@ from django.contrib.auth.models import User
 
 from gestion.models import (
     Area, Cargo, Empleado, Contrato, NominaPeriodo, NovedadNomina,
-    Permiso, Dotacion, Vacante, Candidato,
+    Permiso, Dotacion, SalarioMinimo, Vacante, Candidato,
 )
 
 
@@ -168,18 +168,26 @@ class Command(BaseCommand):
                 defaults={"fecha_fin": fin_, "motivo": motivo, "estado": estado},
             )
 
-        # Dotaciones
+        # Salarios mínimos legales (SMMLV) — actualizar según decreto anual
+        smmlv_data = [(2025, 1423500), (2026, 1750905)]
+        for anio, valor in smmlv_data:
+            SalarioMinimo.objects.get_or_create(anio=anio, defaults={"valor": Decimal(str(valor))})
+
+        # Dotaciones (ley colombiana: trabajadores < 2 SMMLV, entregas a más
+        # tardar el 30/abril, 31/agosto y 20/diciembre)
+        anio_actual = hoy.year
         dotaciones_data = [
-            (empleados[5], "UNIFORME", "Overol + botas de seguridad", hoy - timedelta(days=300), None, "ENTREGADA"),
-            (empleados[5], "EPP", "Guantes, gafas y casco", hoy - timedelta(days=60), hoy + timedelta(days=305), "ENTREGADA"),
-            (empleados[3], "UNIFORME", "Camisa corporativa x3", hoy - timedelta(days=30), None, "ENTREGADA"),
-            (empleados[4], "UNIFORME", "Camisa corporativa x3", hoy, hoy + timedelta(days=365), "PENDIENTE"),
-            (lider_tec, "HERRAMIENTA", "Laptop Lenovo ThinkPad", hoy - timedelta(days=700), None, "ENTREGADA"),
+            # (empleado, item, descripción, fecha entrega, estado)
+            (empleados[5], "BOTAS", "Botas de seguridad talla 42", date(anio_actual, 4, 15), "ENTREGADA"),
+            (empleados[5], "CAMISA", "Camisa drill manga larga talla M", date(anio_actual, 8, 20), "ENTREGADA"),
+            (empleados[3], "CAMISETA", "Camiseta corporativa talla S", date(anio_actual, 4, 30), "ENTREGADA"),
+            (empleados[4], "JEAN", "Jean azul talla 8", date(anio_actual, 8, 15), "ENTREGADA"),
+            (empleados[1], "BOTAS", "Botas de seguridad talla 40", date(anio_actual, 12, 20), "PENDIENTE"),
         ]
-        for emp, tipo, desc, entrega, cambio, estado in dotaciones_data:
+        for emp, item, desc, entrega, estado in dotaciones_data:
             Dotacion.objects.get_or_create(
-                empleado=emp, tipo=tipo, descripcion=desc, fecha_entrega=entrega,
-                defaults={"fecha_cambio": cambio, "estado": estado},
+                empleado=emp, item=item, fecha_entrega=entrega,
+                defaults={"descripcion": desc, "estado": estado},
             )
 
         # Vacantes y candidatos
