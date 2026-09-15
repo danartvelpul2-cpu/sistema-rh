@@ -6,13 +6,14 @@ Crea el usuario admin / admin123 y un juego completo de datos de ejemplo.
 """
 from datetime import date, timedelta
 from decimal import Decimal
+from dateutil.relativedelta import relativedelta
 
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 
 from gestion.models import (
     Area, Cargo, Empleado, Contrato, NominaPeriodo, NovedadNomina,
-    Permiso, Dotacion, SalarioMinimo, Vacante, Candidato,
+    Permiso, Dotacion, SalarioMinimo, CompensacionTiempo, Vacante, Candidato,
 )
 
 
@@ -147,6 +148,8 @@ class Command(BaseCommand):
             (empleados[5], "RECARGO_NOCTURNO", "DEVENGADO", 20, 12000, "Inventario nocturno"),
             (empleados[7], "AUSENCIA", "DEDUCIDO", 2, 17000, "Ausencia no justificada"),
             (jefe_contab, "DOMINICAL_FESTIVO", "DEVENGADO", 3, 30000, "Cierre contable festivo"),
+            # Novedad compensable en tiempo (cuadrilla, sin pago)
+            (empleados[5], "HORAS_EXTRA", "COMPENSABLE", 8, 0, "Cuadrilla zona norte — compensar en tiempo"),
         ]
         for emp, concepto, mov, cant, valor, desc in novedades_data:
             NovedadNomina.objects.get_or_create(
@@ -157,15 +160,40 @@ class Command(BaseCommand):
 
         # Permisos
         permisos_data = [
-            (empleados[2], "VACACIONES", hoy + timedelta(days=10), hoy + timedelta(days=24), "Vacaciones anuales", "PENDIENTE"),
-            (empleados[6], "LICENCIA_REMUNERADA", hoy - timedelta(days=5), hoy + timedelta(days=2), "Trámite personal", "APROBADO"),
-            (empleados[7], "INCAPACIDAD", hoy - timedelta(days=3), hoy + timedelta(days=4), "Incapacidad médica", "PENDIENTE"),
-            (empleados[0], "PERMISO_NO_REMUNERADO", hoy + timedelta(days=20), hoy + timedelta(days=20), "Evento familiar", "RECHAZADO"),
+            # (empleado, tipo, remunerado, inicio, fin, motivo, estado)
+            (empleados[2], "VACACIONES", True, hoy + timedelta(days=10), hoy + timedelta(days=24), "Vacaciones anuales", "PENDIENTE"),
+            (empleados[6], "LICENCIA_REMUNERADA", True, hoy - timedelta(days=5), hoy + timedelta(days=2), "Trámite personal", "APROBADO"),
+            (empleados[7], "INCAPACIDAD", True, hoy - timedelta(days=3), hoy + timedelta(days=4), "Incapacidad médica", "PENDIENTE"),
+            (empleados[0], "PERMISO_NO_REMUNERADO", False, hoy + timedelta(days=20), hoy + timedelta(days=20), "Evento familiar", "PENDIENTE"),
+            (empleados[5], "PERMISO_NO_REMUNERADO", False, hoy - timedelta(days=15), hoy - timedelta(days=12), "Asuntos personales", "APROBADO"),
         ]
-        for emp, tipo, ini, fin_, motivo, estado in permisos_data:
-            Permiso.objects.get_or_create(
+        for emp, tipo, remunerado, ini, fin_, motivo, estado in permisos_data:
+            Permiso.objects.update_or_create(
                 empleado=emp, tipo=tipo, fecha_inicio=ini,
-                defaults={"fecha_fin": fin_, "motivo": motivo, "estado": estado},
+                defaults={"remunerado": remunerado, "fecha_fin": fin_,
+                          "motivo": motivo, "estado": estado},
+            )
+
+        # Compensaciones de tiempo por cuadrillas (máx. 1 mes para tomarlas)
+        compensaciones_data = [
+            # (empleado, días atrás trabajó, horas, descripción, estado, tomada hace)
+            (empleados[5], 25, 8, "Cuadrilla zona norte", "PENDIENTE", None),      # por vencer pronto
+            (empleados[3], 40, 6, "Cuadrilla montaje planta", "PENDIENTE", None),  # vencida
+            (empleados[4], 5, 4, "Cuadrilla inventario", "PENDIENTE", None),       # reciente
+            (empleados[5], 50, 4, "Cuadrilla carpa evento", "TOMADA", 35),         # ya tomada
+        ]
+        for emp, dias_atras, horas, desc, estado, tomada_hace in compensaciones_data:
+            f_trabajo = hoy - timedelta(days=dias_atras)
+            f_limite = f_trabajo + relativedelta(months=1)
+            CompensacionTiempo.objects.get_or_create(
+                empleado=emp, fecha_trabajo=f_trabajo,
+                defaults={
+                    "horas": Decimal(str(horas)),
+                    "descripcion": desc,
+                    "fecha_limite": f_limite,
+                    "estado": estado,
+                    "fecha_tomada": hoy - timedelta(days=tomada_hace) if tomada_hace else None,
+                },
             )
 
         # Salarios mínimos legales (SMMLV) — actualizar según decreto anual

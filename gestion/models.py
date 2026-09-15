@@ -2,6 +2,7 @@
 Modelos del sistema de gestión de Recursos Humanos.
 """
 from datetime import date
+from dateutil.relativedelta import relativedelta
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -191,8 +192,9 @@ class NovedadNomina(models.Model):
     """
 
     class Movimiento(models.TextChoices):
-        DEVENGADO = "DEVENGADO", "Devengado (suma)"
-        DEDUCIDO = "DEDUCIDO", "Deducido (resta)"
+        DEVENGADO = "DEVENGADO", "Remunerado (suma en nómina)"
+        DEDUCIDO = "DEDUCIDO", "Deducido (resta en nómina)"
+        COMPENSABLE = "COMPENSABLE", "Compensable en tiempo (sin pago)"
 
     class Concepto(models.TextChoices):
         HORAS_EXTRA = "HORAS_EXTRA", "Horas extra"
@@ -215,7 +217,7 @@ class NovedadNomina(models.Model):
     periodo = models.ForeignKey(NominaPeriodo, on_delete=models.CASCADE, related_name="novedades")
     empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE, related_name="novedades")
     concepto = models.CharField(max_length=25, choices=Concepto.choices)
-    movimiento = models.CharField(max_length=10, choices=Movimiento.choices)
+    movimiento = models.CharField(max_length=12, choices=Movimiento.choices)
     cantidad = models.DecimalField(
         max_digits=8, decimal_places=2, default=1,
         help_text="Cantidad: horas, días o unidades.",
@@ -256,6 +258,10 @@ class Permiso(models.Model):
 
     empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE, related_name="permisos")
     tipo = models.CharField(max_length=25, choices=Tipo.choices)
+    remunerado = models.BooleanField(
+        default=True,
+        help_text="Si NO es remunerado, al aprobarse se descuenta automáticamente de la nómina.",
+    )
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
     motivo = models.TextField(blank=True)
@@ -454,3 +460,56 @@ class Candidato(models.Model):
     @property
     def nombre_completo(self):
         return f"{self.nombres} {self.apellidos}"
+
+
+class CompensacionTiempo(models.Model):
+    """
+    Tiempo compensatorio por trabajos extra de cuadrillas: la empresa no paga
+    horas extra sino que las compensa con tiempo libre, el cual debe tomarse
+    a más tardar 1 mes después del día trabajado.
+    """
+
+    class Estado(models.TextChoices):
+        PENDIENTE = "PENDIENTE", "Pendiente de tomar"
+        TOMADA = "TOMADA", "Ya tomada"
+
+    empleado = models.ForeignKey(
+        Empleado, on_delete=models.CASCADE, related_name="compensaciones"
+    )
+    fecha_trabajo = models.DateField(
+        help_text="Día en que se realizó el trabajo extra (cuadrilla)."
+    )
+    horas = models.DecimalField(max_digits=6, decimal_places=2, help_text="Horas a compensar.")
+    descripcion = models.CharField(max_length=200, blank=True)
+    fecha_limite = models.DateField(
+        help_text="Fecha máxima para tomar el tiempo (regla interna: 1 mes)."
+    )
+    estado = models.CharField(max_length=10, choices=Estado.choices, default=Estado.PENDIENTE)
+    fecha_tomada = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["fecha_limite"]
+        verbose_name = "Compensación de tiempo"
+        verbose_name_plural = "Compensaciones de tiempo"
+
+    def __str__(self):
+        return f"{self.horas}h por compensar — {self.empleado}"
+
+    @property
+    def dias_restantes(self):
+        return (self.fecha_limite - date.today()).days
+
+    @property
+    def vencida(self):
+        return self.estado == self.Estado.PENDIENTE and self.fecha_limite < date.today()
+
+    def clean(self):
+        if self.fecha_limite and self.fecha_trabajo and self.fecha_limite < self.fecha_trabajo:
+            raise ValidationError({"fecha_limite": "No puede ser anterior al día trabajado."})
+        if self.estado == self.Estado.TOMADA:
+            if not self.fecha_tomada:
+                raise ValidationError({"fecha_tomada": "Indica cuándo se tomó el tiempo."})
+            elif self.fecha_limite and self.fecha_tomada > self.fecha_limite:
+                raise ValidationError(
+                    {"fecha_tomada": "Se tomó después de la fecha límite (máximo 1 mes)."}
+                )

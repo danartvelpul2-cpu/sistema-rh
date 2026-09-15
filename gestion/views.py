@@ -1,5 +1,6 @@
 """Vistas del sistema de gestión de RRHH."""
 from datetime import date, timedelta
+from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -14,12 +15,12 @@ from django.views.generic import (
 
 from .forms import (
     AreaForm, CargoForm, EmpleadoForm, ContratoForm, PeriodoForm, NovedadForm,
-    PermisoForm, PermisoAprobacionForm, DotacionForm, VacanteForm,
-    CandidatoForm, CandidatoEtapaForm,
+    PermisoForm, PermisoAprobacionForm, DotacionForm, CompensacionForm,
+    VacanteForm, CandidatoForm, CandidatoEtapaForm,
 )
 from .models import (
     Area, Cargo, Empleado, Contrato, NominaPeriodo, NovedadNomina,
-    Permiso, Dotacion, Vacante, Candidato,
+    Permiso, Dotacion, CompensacionTiempo, Vacante, Candidato,
 )
 
 
@@ -54,6 +55,18 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         ctx["areas_chart"] = Area.objects.annotate(
             total=Count("empleados", filter=db_models.Q(empleados__estado="ACTIVO"))
         ).values("nombre", "total").order_by("-total")
+
+        # Alertas de tiempo compensatorio (cuadrillas): vencidas y por vencer
+        pendientes = list(
+            CompensacionTiempo.objects.select_related("empleado").filter(
+                estado=CompensacionTiempo.Estado.PENDIENTE
+            )
+        )
+        ctx["compensaciones_vencidas"] = [c for c in pendientes if c.vencida]
+        ctx["compensaciones_urgentes"] = sorted(
+            [c for c in pendientes if not c.vencida], key=lambda c: c.fecha_limite
+        )[:6]
+        ctx["total_compensaciones_pendientes"] = len(pendientes)
         return ctx
 
 
@@ -372,16 +385,59 @@ class PermisoCreateView(LoginRequiredMixin, MensajeMixin, CreateView):
 def permiso_aprobar(request, pk):
     permiso = get_object_or_404(Permiso, pk=pk)
     if request.method == "POST":
+        # Capturar el estado ANTES de validar: is_valid() ya muta la instancia
+        estado_anterior = permiso.estado
         form = PermisoAprobacionForm(request.POST, instance=permiso)
         if form.is_valid():
             permiso = form.save(commit=False)
             permiso.aprobado_por = request.user
             permiso.save()
             messages.success(request, f"Permiso marcado como {permiso.get_estado_display()}.")
+            # Si se aprueba un permiso NO remunerado, se descuenta de nómina
+            if (
+                permiso.estado == Permiso.Estado.APROBADO
+                and estado_anterior != Permiso.Estado.APROBADO
+                and not permiso.remunerado
+            ):
+                _crear_deduccion_por_permiso(request, permiso)
             return redirect("permiso-lista")
     else:
         form = PermisoAprobacionForm(instance=permiso)
     return render(request, "gestion/permiso_aprobar.html", {"form": form, "permiso": permiso})
+
+
+def _crear_deduccion_por_permiso(request, permiso):
+    """Crea la novedad de deducción en el periodo abierto más reciente."""
+    hoy = date.today()
+    periodo = NominaPeriodo.objects.filter(estado="ABIERTA").order_by("-anio", "-mes").first()
+    if not periodo:
+        periodo = NominaPeriodo.objects.create(anio=hoy.year, mes=hoy.month)
+    contrato = (
+        permiso.empleado.contratos.filter(estado="VIGENTE").order_by("-fecha_inicio").first()
+    )
+    salario = contrato.salario if contrato else permiso.empleado.salario_base
+    valor_diario = salario / Decimal("30")
+    desc = (
+        f"Permiso no remunerado: {permiso.get_tipo_display()} "
+        f"({permiso.fecha_inicio.strftime('%d/%m/%Y')} – {permiso.fecha_fin.strftime('%d/%m/%Y')})"
+    )
+    _, creada = NovedadNomina.objects.get_or_create(
+        periodo=periodo,
+        empleado=permiso.empleado,
+        descripcion=desc,
+        defaults={
+            "concepto": NovedadNomina.Concepto.AUSENCIA,
+            "movimiento": NovedadNomina.Movimiento.DEDUCIDO,
+            "cantidad": Decimal(permiso.dias),
+            "valor_unitario": valor_diario,
+        },
+    )
+    if creada:
+        messages.warning(
+            request,
+            f"Se creó el descuento de nómina en {periodo} por "
+            f"${valor_diario * permiso.dias:,.0f} ({permiso.dias} días).",
+        )
 
 
 class PermisoDeleteView(LoginRequiredMixin, EliminarMixin, DeleteView):
@@ -423,6 +479,41 @@ class DotacionDeleteView(LoginRequiredMixin, EliminarMixin, DeleteView):
     model = Dotacion
     template_name = "gestion/confirmar_eliminar.html"
     success_url = reverse_lazy("dotacion-lista")
+
+
+# ---------------------------------------------------------------------------
+# Compensaciones de tiempo (cuadrillas)
+# ---------------------------------------------------------------------------
+
+class CompensacionListView(LoginRequiredMixin, ListView):
+    model = CompensacionTiempo
+    template_name = "gestion/compensacion_lista.html"
+    context_object_name = "compensaciones"
+
+    def get_queryset(self):
+        return CompensacionTiempo.objects.select_related("empleado")
+
+
+class CompensacionCreateView(LoginRequiredMixin, MensajeMixin, CreateView):
+    model = CompensacionTiempo
+    form_class = CompensacionForm
+    template_name = "gestion/formulario.html"
+    success_url = reverse_lazy("compensacion-lista")
+    extra_context = {"titulo": "Nueva compensación de tiempo"}
+
+
+class CompensacionUpdateView(LoginRequiredMixin, MensajeMixin, UpdateView):
+    model = CompensacionTiempo
+    form_class = CompensacionForm
+    template_name = "gestion/formulario.html"
+    success_url = reverse_lazy("compensacion-lista")
+    extra_context = {"titulo": "Editar compensación de tiempo"}
+
+
+class CompensacionDeleteView(LoginRequiredMixin, EliminarMixin, DeleteView):
+    model = CompensacionTiempo
+    template_name = "gestion/confirmar_eliminar.html"
+    success_url = reverse_lazy("compensacion-lista")
 
 
 # ---------------------------------------------------------------------------

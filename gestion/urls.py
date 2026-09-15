@@ -62,6 +62,12 @@ urlpatterns = [
     path("dotaciones/<int:pk>/editar/", views.DotacionUpdateView.as_view(), name="dotacion-editar"),
     path("dotaciones/<int:pk>/eliminar/", views.DotacionDeleteView.as_view(), name="dotacion-eliminar"),
 
+    # Compensaciones de tiempo (cuadrillas)
+    path("compensaciones/", views.CompensacionListView.as_view(), name="compensacion-lista"),
+    path("compensaciones/nueva/", views.CompensacionCreateView.as_view(), name="compensacion-crear"),
+    path("compensaciones/<int:pk>/editar/", views.CompensacionUpdateView.as_view(), name="compensacion-editar"),
+    path("compensaciones/<int:pk>/eliminar/", views.CompensacionDeleteView.as_view(), name="compensacion-eliminar"),
+
     # Selección
     path("seleccion/", views.VacanteListView.as_view(), name="vacante-lista"),
     path("seleccion/nueva/", views.VacanteCreateView.as_view(), name="vacante-crear"),

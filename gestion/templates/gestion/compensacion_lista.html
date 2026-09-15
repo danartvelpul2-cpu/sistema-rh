@@ -1,0 +1,55 @@
+{% extends "gestion/base.html" %}
+{% block titulo %}Compensaciones{% endblock %}
+{% block nav_compensaciones %}active{% endblock %}
+{% block encabezado %}Compensaciones de tiempo (cuadrillas){% endblock %}
+
+{% block contenido %}
+<div class="alert alert-light border small">
+    <i class="bi bi-info-circle me-1"></i>
+    La empresa <strong>no paga horas extra</strong>: se compensan con tiempo libre, el cual el
+    trabajador debe tomar a más tardar <strong>1 mes después</strong> del día trabajado.
+    Las compensaciones vencidas se resaltan en rojo.
+</div>
+<div class="card card-stat">
+    <div class="card-header bg-white d-flex justify-content-end">
+        <a href="{% url 'compensacion-crear' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nueva compensación</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Empleado</th><th>Día trabajado</th><th>Horas</th><th>Descripción</th><th>Fecha límite</th><th>Tiempo restante</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                {% for c in compensaciones %}
+                <tr class="{% if c.vencida %}table-danger{% endif %}">
+                    <td><a href="{% url 'empleado-detalle' c.empleado_id %}" class="fw-semibold">{{ c.empleado.nombre_completo }}</a></td>
+                    <td class="small">{{ c.fecha_trabajo|date:"d/m/Y" }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ c.horas }} h</span></td>
+                    <td class="small">{{ c.descripcion|default:"—" }}</td>
+                    <td class="small">{{ c.fecha_limite|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if c.estado == 'TOMADA' %}
+                            <span class="badge bg-secondary">Tomada el {{ c.fecha_tomada|date:"d/m/Y" }}</span>
+                        {% elif c.vencida %}
+                            <span class="badge bg-danger">Vencida hace {{ c.dias_restantes|cut:"-" }} días</span>
+                        {% else %}
+                            <span class="badge {% if c.dias_restantes <= 7 %}bg-danger{% elif c.dias_restantes <= 15 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                {% if c.dias_restantes == 0 %}Vence hoy{% else %}{{ c.dias_restantes }} días{% endif %}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if c.estado == 'PENDIENTE' %}<span class="badge bg-info text-dark">Pendiente</span>
+                        {% else %}<span class="badge bg-secondary">Tomada</span>{% endif %}
+                    </td>
+                    <td class="text-nowrap">
+                        <a href="{% url 'compensacion-editar' c.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'compensacion-eliminar' c.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">No hay compensaciones registradas.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,12 +1,13 @@
 """Formularios del sistema de gestión de RRHH."""
 from datetime import date
+from dateutil.relativedelta import relativedelta
 
 from django import forms
 from django.core.exceptions import ValidationError
 
 from .models import (
     Area, Cargo, Empleado, Contrato, NominaPeriodo, NovedadNomina,
-    Permiso, Dotacion, Vacante, Candidato,
+    Permiso, Dotacion, CompensacionTiempo, Vacante, Candidato,
 )
 
 
@@ -98,7 +99,7 @@ class NovedadForm(FormEstilo, forms.ModelForm):
 class PermisoForm(FormEstilo, forms.ModelForm):
     class Meta:
         model = Permiso
-        fields = ["empleado", "tipo", "fecha_inicio", "fecha_fin", "motivo"]
+        fields = ["empleado", "tipo", "remunerado", "fecha_inicio", "fecha_fin", "motivo"]
 
 
 class PermisoAprobacionForm(FormEstilo, forms.ModelForm):
@@ -118,6 +119,24 @@ class DotacionForm(FormEstilo, forms.ModelForm):
 
     def clean_fecha_entrega(self):
         return self.cleaned_data.get("fecha_entrega") or date.today()
+
+
+class CompensacionForm(FormEstilo, forms.ModelForm):
+    class Meta:
+        model = CompensacionTiempo
+        fields = [
+            "empleado", "fecha_trabajo", "horas", "descripcion",
+            "fecha_limite", "estado", "fecha_tomada",
+        ]
+
+    def clean(self):
+        cleaned = super().clean()
+        fecha_trabajo = cleaned.get("fecha_trabajo")
+        fecha_limite = cleaned.get("fecha_limite")
+        # Regla interna: máximo 1 mes para tomar la compensación
+        if fecha_trabajo and not fecha_limite:
+            cleaned["fecha_limite"] = fecha_trabajo + relativedelta(months=1)
+        return cleaned
 
 
 class VacanteForm(FormEstilo, forms.ModelForm):

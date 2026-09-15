@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from .models import (
     Area, Cargo, Empleado, Contrato, NominaPeriodo, NovedadNomina,
-    Permiso, Dotacion, SalarioMinimo, Vacante, Candidato,
+    Permiso, Dotacion, SalarioMinimo, CompensacionTiempo, Vacante, Candidato,
 )
 
 
@@ -59,6 +59,12 @@ class SalarioMinimoAdmin(admin.ModelAdmin):
 class DotacionAdmin(admin.ModelAdmin):
     list_display = ("empleado", "item", "descripcion", "fecha_entrega", "estado")
     list_filter = ("item", "estado")
+
+
+@admin.register(CompensacionTiempo)
+class CompensacionTiempoAdmin(admin.ModelAdmin):
+    list_display = ("empleado", "fecha_trabajo", "horas", "fecha_limite", "estado")
+    list_filter = ("estado",)
 
 
 @admin.register(Vacante)

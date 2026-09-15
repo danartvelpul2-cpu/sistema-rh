@@ -38,6 +38,18 @@
             </div>
         </div>
     </div>
+    <div class="col-6 col-md-3">
+        <div class="card card-stat h-100 border-start border-{% if compensaciones_vencidas %}danger{% else %}warning{% endif %} border-4">
+            <div class="card-body">
+                <div class="text-muted small">Tiempo por compensar (cuadrillas)</div>
+                <div class="h3 mb-0 {% if compensaciones_vencidas %}text-danger{% else %}text-warning{% endif %}">{{ total_compensaciones_pendientes }}</div>
+                <div class="text-muted small">
+                    {% if compensaciones_vencidas %}<span class="text-danger fw-semibold">{{ compensaciones_vencidas|length }} vencida(s)</span>{% else %}Sin vencidas{% endif %}
+                    · <a href="{% url 'compensacion-lista' %}" class="small">Ver →</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="row g-3">
@@ -115,6 +127,31 @@
                 <a href="{% url 'dotacion-lista' %}" class="small">Ver dotaciones →</a>
             </div>
         </div>
+
+        {% if compensaciones_vencidas or compensaciones_urgentes %}
+        <div class="card card-stat mt-3 border-{% if compensaciones_vencidas %}danger{% else %}warning{% endif %}">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-clock-history text-{% if compensaciones_vencidas %}danger{% else %}warning{% endif %} me-2"></i>
+                Alertas de compensación (máx. 1 mes)
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for c in compensaciones_vencidas %}
+                <li class="list-group-item small d-flex justify-content-between align-items-center bg-danger-subtle">
+                    <span><strong>{{ c.empleado.nombre_completo }}</strong> · {{ c.horas }}h · trabajó {{ c.fecha_trabajo|date:"d/m/Y" }}</span>
+                    <span class="badge bg-danger">Vencida hace {{ c.dias_restantes|cut:"-" }} días</span>
+                </li>
+                {% endfor %}
+                {% for c in compensaciones_urgentes %}
+                <li class="list-group-item small d-flex justify-content-between align-items-center">
+                    <span>{{ c.empleado.nombre_completo }} · {{ c.horas }}h · trabajó {{ c.fecha_trabajo|date:"d/m/Y" }}</span>
+                    <span class="badge {% if c.dias_restantes <= 7 %}bg-danger{% elif c.dias_restantes <= 15 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                        {% if c.dias_restantes == 0 %}Vence hoy{% else %}Quedan {{ c.dias_restantes }} días{% endif %}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

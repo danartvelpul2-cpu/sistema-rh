@@ -55,7 +55,8 @@
                     <td>{{ n.empleado.nombre_completo }}</td>
                     <td>{{ n.get_concepto_display }}</td>
                     <td>
-                        {% if n.movimiento == 'DEVENGADO' %}<span class="badge bg-success">Devengado</span>
+                        {% if n.movimiento == 'DEVENGADO' %}<span class="badge bg-success">Remunerado</span>
+                        {% elif n.movimiento == 'COMPENSABLE' %}<span class="badge bg-info text-dark">Compensable</span>
                         {% else %}<span class="badge bg-danger">Deducido</span>{% endif %}
                     </td>
                     <td class="text-end">{{ n.cantidad|floatformat:2|intcomma }}</td>

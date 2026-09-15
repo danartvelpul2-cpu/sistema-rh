@@ -14,6 +14,12 @@
                     {{ permiso.fecha_inicio|date:"d/m/Y" }} — {{ permiso.fecha_fin|date:"d/m/Y" }}
                     ({{ permiso.dias }} días)
                 </p>
+                {% if permiso.remunerado %}
+                    <p><span class="badge bg-success">Remunerado</span></p>
+                {% else %}
+                    <p><span class="badge bg-danger">No remunerado</span>
+                    <span class="text-danger small">— al aprobarse se creará el descuento automático en la nómina del periodo abierto.</span></p>
+                {% endif %}
                 {% if permiso.motivo %}<p><em>"{{ permiso.motivo }}"</em></p>{% endif %}
                 <form method="post">
                     {% csrf_token %}

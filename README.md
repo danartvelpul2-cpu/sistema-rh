@@ -12,8 +12,9 @@ procesos de selección y organigrama.
 | Empleados | Fichas con área, cargo, jefe inmediato, salario y estado |
 | Contratos | Indefinidos, **término fijo con duración diferente por persona**, obra/labor, prestación de servicios y aprendizaje, con alertas de vencimiento |
 | Nómina | Periodos mensuales con liquidación automática: básico + devengados − deducciones |
-| Novedades | Horas extra, recargos, bonificaciones, comisiones, incapacidades, ausencias, descuentos |
-| Permisos | Vacaciones, licencias e incapacidades con aprobación/rechazo |
+| Novedades | Horas extra, recargos, bonificaciones, comisiones, incapacidades, ausencias, descuentos. Cada novedad es **remunerada (suma), deducida (resta) o compensable en tiempo (sin pago)** |
+| Permisos | Vacaciones, licencias e incapacidades con aprobación/rechazo. Condición **remunerado / no remunerado**: al aprobar uno no remunerado se crea el descuento automático en la nómina del periodo abierto |
+| Compensaciones | Tiempo compensatorio por cuadrillas (la empresa no paga horas extra): máximo **1 mes** para tomarlo, con alertas de vencimiento en el dashboard |
 | Dotaciones | Según ley colombiana: trabajadores < 2 SMMLV, entregas a más tardar el 30/abr, 31/ago y 20/dic (camisa, camiseta, jean, botas). SMMLV editable por año |
 | Selección | Vacantes y candidatos con embudo de etapas |
 | Organigrama | Generado automáticamente desde la jerarquía de jefes |
