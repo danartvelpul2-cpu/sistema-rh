@@ -1,0 +1,3 @@
+# Los scripts de shell deben mantener siempre fin de línea LF
+# (CRLF rompe la ejecución dentro del contenedor Linux)
+*.sh text eol=lf
