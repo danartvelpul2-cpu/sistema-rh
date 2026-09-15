@@ -1,0 +1,47 @@
+{% extends "gestion/base.html" %}
+{% load humanize %}
+{% block titulo %}Contratos{% endblock %}
+{% block nav_contratos %}active{% endblock %}
+{% block encabezado %}Contratos{% endblock %}
+
+{% block contenido %}
+<div class="card card-stat">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="btn-group btn-group-sm">
+            <a href="?estado=VIGENTE" class="btn btn-{% if filtro_estado == 'VIGENTE' %}primary{% else %}outline-primary{% endif %}">Vigentes</a>
+            <a href="?estado=FINALIZADO" class="btn btn-{% if filtro_estado == 'FINALIZADO' %}primary{% else %}outline-primary{% endif %}">Finalizados</a>
+        </div>
+        <a href="{% url 'contrato-crear' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo contrato</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Empleado</th><th>Tipo</th><th>Inicio</th><th>Fin</th><th>Modalidad</th><th>Salario</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                {% for c in contratos %}
+                <tr class="{% if c.esta_por_vencer %}table-warning{% endif %}">
+                    <td><a href="{% url 'empleado-detalle' c.empleado_id %}" class="fw-semibold">{{ c.empleado.nombre_completo }}</a></td>
+                    <td>{{ c.get_tipo_display }}</td>
+                    <td class="small">{{ c.fecha_inicio|date:"d/m/Y" }}</td>
+                    <td class="small">
+                        {{ c.fecha_fin|date:"d/m/Y"|default:"—" }}
+                        {% if c.esta_por_vencer %}<span class="badge bg-warning text-dark ms-1">{{ c.dias_para_vencer }} días</span>{% endif %}
+                    </td>
+                    <td>{{ c.get_modalidad_display }}</td>
+                    <td>${{ c.salario|floatformat:2|intcomma }}</td>
+                    <td>
+                        {% if c.estado == 'VIGENTE' %}<span class="badge bg-success">Vigente</span>
+                        {% else %}<span class="badge bg-secondary">Finalizado</span>{% endif %}
+                    </td>
+                    <td class="text-nowrap">
+                        <a href="{% url 'contrato-editar' c.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'contrato-eliminar' c.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">No hay contratos en este estado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

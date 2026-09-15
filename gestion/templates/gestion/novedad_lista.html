@@ -1,0 +1,40 @@
+{% extends "gestion/base.html" %}
+{% load humanize %}
+{% block titulo %}Novedades de nómina{% endblock %}
+{% block nav_novedades %}active{% endblock %}
+{% block encabezado %}Novedades de nómina{% endblock %}
+
+{% block contenido %}
+<div class="card card-stat">
+    <div class="card-header bg-white d-flex justify-content-end">
+        <a href="{% url 'novedad-crear' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nueva novedad</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Periodo</th><th>Empleado</th><th>Concepto</th><th>Movimiento</th><th class="text-end">Cantidad</th><th class="text-end">Valor unit.</th><th class="text-end">Total</th><th></th></tr></thead>
+            <tbody>
+                {% for n in novedades %}
+                <tr>
+                    <td><span class="badge bg-light text-dark border">{{ n.periodo }}</span></td>
+                    <td>{{ n.empleado.nombre_completo }}</td>
+                    <td>{{ n.get_concepto_display }}</td>
+                    <td>
+                        {% if n.movimiento == 'DEVENGADO' %}<span class="badge bg-success">Devengado</span>
+                        {% else %}<span class="badge bg-danger">Deducido</span>{% endif %}
+                    </td>
+                    <td class="text-end">{{ n.cantidad|floatformat:2|intcomma }}</td>
+                    <td class="text-end">${{ n.valor_unitario|floatformat:2|intcomma }}</td>
+                    <td class="text-end fw-semibold">${{ n.total|floatformat:2|intcomma }}</td>
+                    <td class="text-nowrap">
+                        <a href="{% url 'novedad-editar' n.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'novedad-eliminar' n.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">No hay novedades registradas.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

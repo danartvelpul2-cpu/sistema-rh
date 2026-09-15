@@ -1,0 +1,32 @@
+{% extends "gestion/base.html" %}
+{% block titulo %}Nómina{% endblock %}
+{% block nav_nomina %}active{% endblock %}
+{% block encabezado %}Periodos de nómina{% endblock %}
+
+{% block contenido %}
+<div class="card card-stat">
+    <div class="card-header bg-white d-flex justify-content-end">
+        <a href="{% url 'periodo-crear' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo periodo</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Periodo</th><th>Estado</th><th>Novedades</th><th></th></tr></thead>
+            <tbody>
+                {% for p in periodos %}
+                <tr>
+                    <td class="fw-semibold">{{ p.anio }} - {{ p.mes|stringformat:"02d" }}</td>
+                    <td>
+                        {% if p.estado == 'ABIERTA' %}<span class="badge bg-success">Abierta</span>
+                        {% else %}<span class="badge bg-secondary">Cerrada</span>{% endif %}
+                    </td>
+                    <td>{{ p.novedades.count }}</td>
+                    <td><a href="{% url 'nomina-detalle' p.pk %}" class="btn btn-sm btn-outline-primary">Ver liquidación</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-4">No hay periodos de nómina creados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "gestion/base.html" %}
+{% block titulo %}Mover candidato de etapa{% endblock %}
+{% block nav_seleccion %}active{% endblock %}
+{% block encabezado %}Mover candidato de etapa{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card card-stat">
+            <div class="card-body p-4">
+                <h2 class="h5">{{ candidato.nombre_completo }}</h2>
+                <p class="text-muted">Vacante: {{ candidato.vacante.cargo.nombre }} · Etapa actual: <strong>{{ candidato.get_etapa_display }}</strong></p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nueva etapa</label>
+                        {{ form.etapa }}
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-arrow-right-circle me-1"></i>Mover</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="history.back()">Cancelar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

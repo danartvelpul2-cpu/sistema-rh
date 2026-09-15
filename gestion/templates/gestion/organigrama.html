@@ -1,0 +1,48 @@
+{% extends "gestion/base.html" %}
+{% block titulo %}Organigrama{% endblock %}
+{% block nav_organigrama %}active{% endblock %}
+{% block encabezado %}Organigrama{% endblock %}
+
+{% block contenido %}
+<div class="alert alert-light border small">
+    <i class="bi bi-info-circle me-1"></i>El organigrama se genera automáticamente a partir del <strong>jefe inmediato</strong> asignado a cada empleado. Para corregirlo, edita el campo "Jefe" en la ficha del empleado.
+</div>
+
+<div class="card card-stat">
+    <div class="card-body organigrama">
+        {% if raices %}
+            <ul class="org-nivel raiz">
+                {% for nodo in raices %}
+                    {% include "gestion/organigrama_nodo.html" with nodo=nodo %}
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-center text-muted py-4 mb-0">No hay empleados activos para mostrar.</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .organigrama ul { list-style: none; padding-left: 0; }
+    .organigrama .card-body { overflow-x: auto; }
+    .org-nivel { display: flex; justify-content: center; gap: 1rem; flex-wrap: nowrap; min-width: min-content; }
+    .org-nodo { text-align: center; position: relative; padding-top: 1rem; }
+    .org-caja {
+        display: inline-block; background: #fff; border: 2px solid #0d6efd;
+        border-radius: .6rem; padding: .6rem 1rem; min-width: 170px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.1); text-decoration: none; color: inherit;
+    }
+    .org-caja:hover { background: #f0f6ff; }
+    .org-nodo { display: flex; flex-direction: column; align-items: center; }
+    .org-caja .nombre { font-weight: 600; font-size: .92rem; }
+    .org-caja .cargo { font-size: .78rem; color: #64748b; }
+    .org-caja .area { font-size: .7rem; color: #94a3b8; }
+    .org-hijos { display: flex; justify-content: center; gap: .75rem; flex-wrap: nowrap; margin-top: 1.25rem; position: relative; }
+    .org-hijos::before {
+        content: ""; position: absolute; top: -.65rem; left: 50%; width: 2px; height: .65rem; background: #cbd5e1;
+    }
+    .org-nodo:not(.hoja)::after {
+        content: ""; position: absolute; bottom: -.65rem; left: 50%; width: 2px; height: .65rem; background: #cbd5e1;
+    }
+</style>
+{% endblock %}

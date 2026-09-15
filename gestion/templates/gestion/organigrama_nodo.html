@@ -1,0 +1,14 @@
+<li class="org-nodo {% if not nodo.hijos %}hoja{% endif %}">
+    <a class="org-caja" href="{% url 'empleado-detalle' nodo.empleado.pk %}">
+        <div class="nombre">{{ nodo.empleado.nombre_completo }}</div>
+        <div class="cargo">{{ nodo.empleado.cargo.nombre }}</div>
+        <div class="area">{{ nodo.empleado.area.nombre }}</div>
+    </a>
+    {% if nodo.hijos %}
+    <ul class="org-hijos">
+        {% for hijo in nodo.hijos %}
+            {% include "gestion/organigrama_nodo.html" with nodo=hijo %}
+        {% endfor %}
+    </ul>
+    {% endif %}
+</li>

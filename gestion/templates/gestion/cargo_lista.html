@@ -1,0 +1,32 @@
+{% extends "gestion/base.html" %}
+{% block titulo %}Cargos{% endblock %}
+{% block encabezado %}Cargos{% endblock %}
+
+{% block contenido %}
+<div class="card card-stat">
+    <div class="card-header bg-white d-flex justify-content-end">
+        <a href="{% url 'cargo-crear' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo cargo</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Cargo</th><th>Área</th><th>Descripción</th><th>Empleados</th><th></th></tr></thead>
+            <tbody>
+                {% for c in cargos %}
+                <tr>
+                    <td class="fw-semibold">{{ c.nombre }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ c.area.nombre }}</span></td>
+                    <td class="small text-muted">{{ c.descripcion|truncatechars:60|default:"—" }}</td>
+                    <td>{{ c.empleados.count }}</td>
+                    <td class="text-nowrap">
+                        <a href="{% url 'cargo-editar' c.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'cargo-eliminar' c.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-4">No hay cargos registrados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

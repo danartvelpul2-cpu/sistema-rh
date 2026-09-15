@@ -1,0 +1,60 @@
+{% extends "gestion/base.html" %}
+{% block titulo %}Áreas{% endblock %}
+{% block encabezado %}Áreas y cargos{% endblock %}
+
+{% block contenido %}
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card card-stat">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Áreas</span>
+                <a href="{% url 'area-crear' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>Nueva</a>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for a in areas %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ a.nombre }}</strong>
+                        <div class="text-muted small">{{ a.descripcion|default:"" }}</div>
+                        <div class="small text-primary">{{ a.empleados.count }} empleados · {{ a.cargos.count }} cargos</div>
+                    </div>
+                    <div class="text-nowrap">
+                        <a href="{% url 'area-editar' a.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'area-eliminar' a.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                    </div>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-center text-muted py-4">No hay áreas registradas.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card card-stat">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Cargos</span>
+                <a href="{% url 'cargo-crear' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>Nuevo cargo</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead><tr><th>Cargo</th><th>Área</th><th></th></tr></thead>
+                    <tbody>
+                        {% for c in cargos %}
+                        <tr>
+                            <td class="fw-semibold">{{ c.nombre }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ c.area.nombre }}</span></td>
+                            <td class="text-nowrap">
+                                <a href="{% url 'cargo-editar' c.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                                <a href="{% url 'cargo-eliminar' c.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center text-muted py-4">No hay cargos registrados.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

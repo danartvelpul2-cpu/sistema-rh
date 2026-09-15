@@ -1,0 +1,66 @@
+{% extends "gestion/base.html" %}
+{% block titulo %}Vacante · {{ vacante.cargo.nombre }}{% endblock %}
+{% block nav_seleccion %}active{% endblock %}
+{% block encabezado %}Vacante: {{ vacante.cargo.nombre }}{% endblock %}
+
+{% block contenido %}
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card card-stat">
+            <div class="card-body p-4">
+                <h2 class="h5">{{ vacante.cargo.nombre }}</h2>
+                <div class="text-muted mb-3">{{ vacante.cargo.area.nombre }}</div>
+                {% if vacante.estado == 'ABIERTA' %}<span class="badge bg-success">Abierta</span>{% else %}<span class="badge bg-secondary">Cerrada</span>{% endif %}
+                <hr>
+                <ul class="list-unstyled small mb-0">
+                    <li class="mb-1"><i class="bi bi-cash me-2"></i>Salario ofrecido: {% if vacante.salario_ofrecido %}${{ vacante.salario_ofrecido|floatformat:2 }}{% else %}A convenir{% endif %}</li>
+                    <li class="mb-1"><i class="bi bi-calendar-plus me-2"></i>Abierta: {{ vacante.fecha_apertura|date:"d/m/Y" }}</li>
+                    <li class="mb-1"><i class="bi bi-calendar-x me-2"></i>Cierre: {{ vacante.fecha_cierre|date:"d/m/Y"|default:"—" }}</li>
+                    <li><i class="bi bi-person-check me-2"></i>Responsable: {{ vacante.responsable.nombre_completo|default:"—" }}</li>
+                </ul>
+                <p class="small mt-3">{{ vacante.descripcion }}</p>
+                <a href="{% url 'vacante-editar' vacante.pk %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Editar vacante</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card card-stat">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Candidatos ({{ candidatos|length }})</span>
+                <a href="{% url 'candidato-crear' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>Agregar candidato</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead><tr><th>Candidato</th><th>Contacto</th><th>Fuente</th><th>Etapa</th><th></th></tr></thead>
+                    <tbody>
+                        {% for c in candidatos %}
+                        <tr>
+                            <td class="fw-semibold">{{ c.nombre_completo }}</td>
+                            <td class="small">{{ c.email|default:"—" }}<br>{{ c.telefono }}</td>
+                            <td class="small">{{ c.fuente|default:"—" }}</td>
+                            <td>
+                                {% if c.etapa == 'POSTULADO' %}<span class="badge bg-light text-dark border badge-etapa">Postulado</span>
+                                {% elif c.etapa == 'SCREENING' %}<span class="badge bg-info text-dark badge-etapa">Filtrado</span>
+                                {% elif c.etapa == 'ENTREVISTA' %}<span class="badge bg-primary badge-etapa">Entrevista</span>
+                                {% elif c.etapa == 'PRUEBA' %}<span class="badge bg-warning text-dark badge-etapa">Prueba técnica</span>
+                                {% elif c.etapa == 'OFERTA' %}<span class="badge bg-warning badge-etapa">Oferta</span>
+                                {% elif c.etapa == 'CONTRATADO' %}<span class="badge bg-success badge-etapa">Contratado</span>
+                                {% else %}<span class="badge bg-danger badge-etapa">Rechazado</span>{% endif %}
+                            </td>
+                            <td class="text-nowrap">
+                                <a href="{% url 'candidato-etapa' c.pk %}" class="btn btn-sm btn-outline-success" title="Mover de etapa"><i class="bi bi-arrow-right-circle"></i></a>
+                                <a href="{% url 'candidato-editar' c.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                                <a href="{% url 'candidato-eliminar' c.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">Sin candidatos aún.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

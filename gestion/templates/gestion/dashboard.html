@@ -1,0 +1,120 @@
+{% extends "gestion/base.html" %}
+{% block titulo %}Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+{% block encabezado %}Dashboard{% endblock %}
+
+{% block contenido %}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card card-stat h-100">
+            <div class="card-body">
+                <div class="text-muted small">Empleados activos</div>
+                <div class="h3 mb-0">{{ total_empleados }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card card-stat h-100 border-start border-warning border-4">
+            <div class="card-body">
+                <div class="text-muted small">Contratos por vencer (30 días)</div>
+                <div class="h3 mb-0 text-warning">{{ contratos_por_vencer|length }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card card-stat h-100 border-start border-info border-4">
+            <div class="card-body">
+                <div class="text-muted small">Permisos pendientes</div>
+                <div class="h3 mb-0 text-info">{{ permisos_pendientes }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card card-stat h-100 border-start border-success border-4">
+            <div class="card-body">
+                <div class="text-muted small">Vacantes abiertas</div>
+                <div class="h3 mb-0 text-success">{{ vacantes_abiertas }}</div>
+                <div class="text-muted small">Candidatos activos: {{ candidatos_activos }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card card-stat">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Contratos próximos a vencer</div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead><tr><th>Empleado</th><th>Tipo</th><th>Fecha fin</th><th>Días restantes</th></tr></thead>
+                    <tbody>
+                        {% for c in contratos_por_vencer %}
+                        <tr>
+                            <td><a href="{% url 'empleado-detalle' c.empleado_id %}">{{ c.empleado.nombre_completo }}</a></td>
+                            <td>{{ c.get_tipo_display }}</td>
+                            <td>{{ c.fecha_fin|date:"d/m/Y" }}</td>
+                            <td><span class="badge bg-warning text-dark">{{ c.dias_para_vencer }} días</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-3">Ningún contrato vence en los próximos 30 días.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card card-stat mt-3">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-calendar-check text-info me-2"></i>Últimos permisos</div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead><tr><th>Empleado</th><th>Tipo</th><th>Fechas</th><th>Estado</th></tr></thead>
+                    <tbody>
+                        {% for p in ultimos_permisos %}
+                        <tr>
+                            <td>{{ p.empleado.nombre_completo }}</td>
+                            <td>{{ p.get_tipo_display }}</td>
+                            <td class="small">{{ p.fecha_inicio|date:"d/m/Y" }} — {{ p.fecha_fin|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if p.estado == 'PENDIENTE' %}<span class="badge bg-secondary">Pendiente</span>
+                                {% elif p.estado == 'APROBADO' %}<span class="badge bg-success">Aprobado</span>
+                                {% else %}<span class="badge bg-danger">Rechazado</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-3">Sin permisos registrados.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card card-stat">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-bar-chart text-primary me-2"></i>Empleados por área</div>
+            <div class="card-body">
+                {% for a in areas_chart %}
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between small">
+                        <span>{{ a.nombre }}</span><span class="fw-semibold">{{ a.total }}</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-primary" style="width: {% widthratio a.total total_empleados 100 %}%"></div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted mb-0">Sin datos.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card card-stat mt-3">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-bag text-secondary me-2"></i>Dotaciones pendientes de entrega</div>
+            <div class="card-body">
+                <div class="h4 mb-0">{{ dotaciones_pendientes }}</div>
+                <a href="{% url 'dotacion-lista' %}" class="small">Ver dotaciones →</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

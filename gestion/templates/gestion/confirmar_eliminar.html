@@ -1,0 +1,22 @@
+{% extends "gestion/base.html" %}
+{% block titulo %}Confirmar eliminación{% endblock %}
+{% block encabezado %}Confirmar eliminación{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card card-stat border-danger">
+            <div class="card-body p-4 text-center">
+                <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2.5rem;"></i>
+                <h2 class="h5 mt-2">¿Eliminar el registro?</h2>
+                <p class="text-muted">Vas a eliminar: <strong>{{ object }}</strong>. Esta acción no se puede deshacer.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Sí, eliminar</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="history.back()">Cancelar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

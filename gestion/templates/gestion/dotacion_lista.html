@@ -1,0 +1,39 @@
+{% extends "gestion/base.html" %}
+{% block titulo %}Dotaciones{% endblock %}
+{% block nav_dotaciones %}active{% endblock %}
+{% block encabezado %}Dotaciones{% endblock %}
+
+{% block contenido %}
+<div class="card card-stat">
+    <div class="card-header bg-white d-flex justify-content-end">
+        <a href="{% url 'dotacion-crear' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nueva entrega</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Empleado</th><th>Tipo</th><th>Descripción</th><th>Entrega</th><th>Próximo cambio</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                {% for d in dotaciones %}
+                <tr>
+                    <td><a href="{% url 'empleado-detalle' d.empleado_id %}" class="fw-semibold">{{ d.empleado.nombre_completo }}</a></td>
+                    <td>{{ d.get_tipo_display }}</td>
+                    <td>{{ d.descripcion }}</td>
+                    <td class="small">{{ d.fecha_entrega|date:"d/m/Y" }}</td>
+                    <td class="small">{{ d.proximo_cambio|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if d.estado == 'ENTREGADA' %}<span class="badge bg-success">Entregada</span>
+                        {% elif d.estado == 'PENDIENTE' %}<span class="badge bg-warning text-dark">Pendiente</span>
+                        {% else %}<span class="badge bg-secondary">Devuelta</span>{% endif %}
+                    </td>
+                    <td class="text-nowrap">
+                        <a href="{% url 'dotacion-editar' d.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'dotacion-eliminar' d.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-4">No hay dotaciones registradas.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

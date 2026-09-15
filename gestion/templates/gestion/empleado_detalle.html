@@ -1,0 +1,101 @@
+{% extends "gestion/base.html" %}
+{% load humanize %}
+{% block titulo %}{{ empleado.nombre_completo }}{% endblock %}
+{% block nav_empleados %}active{% endblock %}
+{% block encabezado %}{{ empleado.nombre_completo }}{% endblock %}
+
+{% block contenido %}
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card card-stat">
+            <div class="card-body text-center p-4">
+                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width:72px;height:72px;font-size:1.6rem;font-weight:600;">
+                    {{ empleado.nombres|first }}{{ empleado.apellidos|first }}
+                </div>
+                <h2 class="h5 mb-1">{{ empleado.nombre_completo }}</h2>
+                <div class="text-muted">{{ empleado.cargo.nombre }} · {{ empleado.area.nombre }}</div>
+                {% if empleado.estado == 'ACTIVO' %}<span class="badge bg-success mt-2">Activo</span>{% else %}<span class="badge bg-secondary mt-2">Inactivo</span>{% endif %}
+                <hr>
+                <ul class="list-unstyled small text-start mb-0">
+                    <li class="mb-1"><i class="bi bi-card-text me-2"></i>{{ empleado.get_tipo_documento_display }} {{ empleado.numero_documento }}</li>
+                    <li class="mb-1"><i class="bi bi-envelope me-2"></i>{{ empleado.email|default:"—" }}</li>
+                    <li class="mb-1"><i class="bi bi-telephone me-2"></i>{{ empleado.telefono|default:"—" }}</li>
+                    <li class="mb-1"><i class="bi bi-calendar-plus me-2"></i>Ingresó el {{ empleado.fecha_ingreso|date:"d/m/Y" }}</li>
+                    <li><i class="bi bi-person-workspace me-2"></i>Jefe: {{ empleado.jefe.nombre_completo|default:"—" }}</li>
+                </ul>
+                <a href="{% url 'empleado-editar' empleado.pk %}" class="btn btn-outline-primary btn-sm mt-3"><i class="bi bi-pencil me-1"></i>Editar</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card card-stat">
+            <div class="card-header bg-white fw-semibold">Contratos</div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th>Tipo</th><th>Inicio</th><th>Fin</th><th>Salario</th><th>Estado</th></tr></thead>
+                    <tbody>
+                        {% for c in contratos %}
+                        <tr class="{% if c.esta_por_vencer %}table-warning{% endif %}">
+                            <td>{{ c.get_tipo_display }}</td>
+                            <td>{{ c.fecha_inicio|date:"d/m/Y" }}</td>
+                            <td>{{ c.fecha_fin|date:"d/m/Y"|default:"—" }}</td>
+                            <td>${{ c.salario|floatformat:2|intcomma }}</td>
+                            <td>
+                                {% if c.estado == 'VIGENTE' %}
+                                    {% if c.esta_por_vencer %}<span class="badge bg-warning text-dark">Por vencer ({{ c.dias_para_vencer }} días)</span>
+                                    {% else %}<span class="badge bg-success">Vigente</span>{% endif %}
+                                {% else %}<span class="badge bg-secondary">Finalizado</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-3">Sin contratos registrados.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-0">
+            <div class="col-md-6">
+                <div class="card card-stat">
+                    <div class="card-header bg-white fw-semibold">Últimos permisos</div>
+                    <ul class="list-group list-group-flush">
+                        {% for p in permisos %}
+                        <li class="list-group-item small d-flex justify-content-between">
+                            <span>{{ p.get_tipo_display }}<br><span class="text-muted">{{ p.fecha_inicio|date:"d/m" }} — {{ p.fecha_fin|date:"d/m/Y" }}</span></span>
+                            <span>
+                                {% if p.estado == 'PENDIENTE' %}<span class="badge bg-secondary">Pendiente</span>
+                                {% elif p.estado == 'APROBADO' %}<span class="badge bg-success">Aprobado</span>
+                                {% else %}<span class="badge bg-danger">Rechazado</span>{% endif %}
+                            </span>
+                        </li>
+                        {% empty %}<li class="list-group-item text-muted small">Sin permisos.</li>{% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card card-stat">
+                    <div class="card-header bg-white fw-semibold">Últimas dotaciones</div>
+                    <ul class="list-group list-group-flush">
+                        {% for d in dotaciones %}
+                        <li class="list-group-item small">{{ d.get_tipo_display }}: {{ d.descripcion }}<br><span class="text-muted">{{ d.fecha_entrega|date:"d/m/Y" }}</span></li>
+                        {% empty %}<li class="list-group-item text-muted small">Sin dotaciones.</li>{% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {% if subordinados %}
+        <div class="card card-stat mt-3">
+            <div class="card-header bg-white fw-semibold">Personas a cargo</div>
+            <div class="card-body">
+                {% for s in subordinados %}
+                <a href="{% url 'empleado-detalle' s.pk %}" class="badge bg-light text-dark border me-1 mb-1 text-decoration-none p-2">{{ s.nombre_completo }} · {{ s.cargo.nombre }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

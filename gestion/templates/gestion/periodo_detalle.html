@@ -1,0 +1,75 @@
+{% extends "gestion/base.html" %}
+{% load humanize %}
+{% block titulo %}Liquidación {{ periodo }}{% endblock %}
+{% block nav_nomina %}active{% endblock %}
+{% block encabezado %}Liquidación de nómina · {{ periodo.anio }}-{{ periodo.mes|stringformat:"02d" }}{% endblock %}
+
+{% block contenido %}
+<div class="card card-stat mb-3">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">Desglose por empleado</span>
+        <div>
+            <a href="{% url 'novedad-crear' %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg me-1"></i>Agregar novedad</a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr><th>Empleado</th><th>Contrato</th><th class="text-end">Básico</th><th class="text-end">Devengados</th><th class="text-end">Deducciones</th><th class="text-end">Neto a pagar</th></tr>
+            </thead>
+            <tbody>
+                {% for f in liquidacion %}
+                <tr>
+                    <td><a href="{% url 'empleado-detalle' f.empleado.pk %}" class="fw-semibold">{{ f.empleado.nombre_completo }}</a></td>
+                    <td class="small">{{ f.contrato.get_tipo_display|default:"—" }}</td>
+                    <td class="text-end">${{ f.basico|floatformat:2|intcomma }}</td>
+                    <td class="text-end text-success">+${{ f.devengados|floatformat:2|intcomma }}</td>
+                    <td class="text-end text-danger">−${{ f.deducciones|floatformat:2|intcomma }}</td>
+                    <td class="text-end fw-bold">${{ f.neto|floatformat:2|intcomma }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">No hay empleados activos con contrato vigente.</td></tr>
+                {% endfor %}
+            </tbody>
+            {% if liquidacion %}
+            <tfoot class="table-light">
+                <tr>
+                    <td colspan="5" class="text-end fw-semibold">Total nómina del periodo:</td>
+                    <td class="text-end fw-bold">${{ total_neto|floatformat:2|intcomma }}</td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+</div>
+
+{% if periodo.novedades.exists %}
+<div class="card card-stat">
+    <div class="card-header bg-white fw-semibold">Novedades del periodo</div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Empleado</th><th>Concepto</th><th>Movimiento</th><th class="text-end">Cantidad</th><th class="text-end">Valor unit.</th><th class="text-end">Total</th><th></th></tr></thead>
+            <tbody>
+                {% for n in periodo.novedades.all %}
+                <tr>
+                    <td>{{ n.empleado.nombre_completo }}</td>
+                    <td>{{ n.get_concepto_display }}</td>
+                    <td>
+                        {% if n.movimiento == 'DEVENGADO' %}<span class="badge bg-success">Devengado</span>
+                        {% else %}<span class="badge bg-danger">Deducido</span>{% endif %}
+                    </td>
+                    <td class="text-end">{{ n.cantidad|floatformat:2|intcomma }}</td>
+                    <td class="text-end">${{ n.valor_unitario|floatformat:2|intcomma }}</td>
+                    <td class="text-end">${{ n.total|floatformat:2|intcomma }}</td>
+                    <td class="text-nowrap">
+                        <a href="{% url 'novedad-editar' n.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'novedad-eliminar' n.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

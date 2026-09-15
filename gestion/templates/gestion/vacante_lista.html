@@ -1,0 +1,40 @@
+{% extends "gestion/base.html" %}
+{% load humanize %}
+{% block titulo %}Selección{% endblock %}
+{% block nav_seleccion %}active{% endblock %}
+{% block encabezado %}Procesos de selección{% endblock %}
+
+{% block contenido %}
+<div class="card card-stat">
+    <div class="card-header bg-white d-flex justify-content-end">
+        <a href="{% url 'vacante-crear' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nueva vacante</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Cargo</th><th>Área</th><th>Salario ofrecido</th><th>Apertura</th><th>Cierre</th><th>Candidatos</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                {% for v in vacantes %}
+                <tr>
+                    <td><a href="{% url 'vacante-detalle' v.pk %}" class="fw-semibold">{{ v.cargo.nombre }}</a></td>
+                    <td><span class="badge bg-light text-dark border">{{ v.cargo.area.nombre }}</span></td>
+                    <td>{% if v.salario_ofrecido %}${{ v.salario_ofrecido|floatformat:2|intcomma }}{% else %}—{% endif %}</td>
+                    <td class="small">{{ v.fecha_apertura|date:"d/m/Y" }}</td>
+                    <td class="small">{{ v.fecha_cierre|date:"d/m/Y"|default:"—" }}</td>
+                    <td><span class="badge bg-primary">{{ v.num_candidatos }}</span></td>
+                    <td>
+                        {% if v.estado == 'ABIERTA' %}<span class="badge bg-success">Abierta</span>
+                        {% else %}<span class="badge bg-secondary">Cerrada</span>{% endif %}
+                    </td>
+                    <td class="text-nowrap">
+                        <a href="{% url 'vacante-editar' v.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'vacante-eliminar' v.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">No hay vacantes registradas.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
