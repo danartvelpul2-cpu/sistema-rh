@@ -27,6 +27,28 @@ python manage.py seed_demo        # datos de ejemplo (usuario: admin / admin123)
 python manage.py runserver        # http://127.0.0.1:8000
 ```
 
+## Ejecutar con Docker (recomendado)
+
+Requisito: [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado.
+
+```bash
+docker compose up --build
+```
+
+Eso levanta **dos contenedores**: la app y una base de datos PostgreSQL local
+(con volumen persistente, tus datos sobreviven reinicios). Abre
+http://localhost:8000 e ingresa con `admin` / `admin123` (usuario y datos de
+ejemplo creados automáticamente la primera vez gracias a `SEED_DEMO: "true"`
+en `docker-compose.yml`).
+
+Comandos útiles:
+
+```bash
+docker compose logs -f     # ver los logs en vivo
+docker compose down        # detener todo
+docker compose down -v     # detener y BORRAR la base de datos local
+```
+
 ## Panel de administración
 
 En `/admin/` con el mismo usuario. Todos los modelos son administrables.

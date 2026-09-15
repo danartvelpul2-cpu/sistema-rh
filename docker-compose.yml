@@ -1,0 +1,36 @@
+# Ejecutar el sistema RH localmente con Docker:
+#   docker compose up --build
+# Luego abrir http://localhost:8000  (admin / admin123)
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: rh_db
+      POSTGRES_USER: rh_user
+      POSTGRES_PASSWORD: rh_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rh_user -d rh_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgres://rh_user:rh_password@db:5432/rh_db
+      SECRET_KEY: clave-local-docker-cambiar-en-produccion
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      # En "true" crea el usuario admin/admin123 y datos de ejemplo
+      # la primera vez. Cámbialo a "false" cuando tengas datos reales.
+      SEED_DEMO: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
