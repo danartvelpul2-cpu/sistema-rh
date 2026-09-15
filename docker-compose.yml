@@ -33,13 +33,13 @@ services:
         condition: service_healthy
 
   # Interfaz visual para explorar la base de datos: http://localhost:5050
-  # Usuario: admin@rh.local · Contraseña: admin123
+  # Usuario: admin@sistema-rh.com · Contraseña: admin123
   # Al conectar el servidor usa: host "db", puerto 5432, user "rh_user",
   # password "rh_password", database "rh_db"
   pgadmin:
     image: dpage/pgadmin4:latest
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@rh.local
+      PGADMIN_DEFAULT_EMAIL: admin@sistema-rh.com
       PGADMIN_DEFAULT_PASSWORD: admin123
     ports:
       - "5050:80"
